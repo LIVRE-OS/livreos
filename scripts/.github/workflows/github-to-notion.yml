@@ -1,0 +1,29 @@
+name: Sync GitHub Issues to Notion
+
+on:
+  issues:
+    types: [opened, edited, closed]
+
+jobs:
+  sync-to-notion:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Sync issue to Notion
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DEV_TASKS_DB_ID: ${{ secrets.NOTION_DEV_TASKS_DB_ID }}
+        run: |
+          node scripts/github-to-notion.js \
+            "${{ github.event.issue.number }}" \
+            "${{ github.event.issue.title }}" \
+            "${{ github.event.issue.html_url }}" \
+            "${{ github.event.action }}"
