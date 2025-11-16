@@ -52,42 +52,91 @@ function getStatusFromPage(page) {
   return statusProp.select.name || "Backlog";
 }
 
+function getTypesFromPage(page) {
+  const typeProp = page.properties?.Type;
+  if (!typeProp || !typeProp.multi_select) return [];
+  return typeProp.multi_select.map((t) => t.name).filter(Boolean);
+}
+
 // Map Notion Status → GitHub state + status label
 function mapNotionStatusToGithubMeta(status) {
   let state = "open";
-  let label = "status/backlog";
+  let statusLabel = "Backlog";
 
   switch (status) {
     case "Ready":
-      label = "status/ready";
+      statusLabel = "Ready";
       break;
     case "In Progress":
-      label = "status/in-progress";
+      statusLabel = "In Progress";
       break;
     case "Blocked":
-      label = "status/blocked";
+      statusLabel = "Blocked";
       break;
     case "Review":
-      label = "status/review";
+      statusLabel = "Review";
       break;
     case "Done":
-      label = "status/done";
+      statusLabel = "Done";
       state = "closed";
       break;
     case "Archived":
-      label = "status/archived";
+      statusLabel = "Archived";
       state = "closed";
       break;
     case "Backlog":
     default:
-      label = "status/backlog";
+      statusLabel = "Backlog";
       break;
   }
 
   return {
-    state, // "open" or "closed"
-    labels: [label],
+    state,       // "open" or "closed"
+    statusLabel, // label name string
   };
+}
+
+// Map Notion Type values → GitHub label names
+function mapTypesToGithubLabels(types) {
+  const labels = new Set();
+
+  for (const t of types) {
+    switch (t) {
+      case "Bug":
+        labels.add("bug");
+        break;
+      case "Enhancement":
+        labels.add("enhancement");
+        break;
+      case "Documentation":
+        labels.add("documentation");
+        break;
+      case "Question":
+        labels.add("question");
+        break;
+      case "Help Wanted":
+        labels.add("help wanted");
+        break;
+      case "Feature":
+        labels.add("feature");
+        break;
+      case "Research":
+        labels.add("research");
+        break;
+      case "Improvement":
+        labels.add("improvement");
+        break;
+      case "Spike":
+        labels.add("spike");
+        break;
+      default:
+        // For custom types, you can choose to create labels directly with the same name
+        labels.add(t);
+        break;
+    }
+  }
+
+  return Array.from(labels);
 }
 
 // ---------- GitHub helpers ----------
@@ -120,10 +169,11 @@ async function createGithubIssue(title, body, state, labels) {
   return { number: data.number, html_url: data.html_url };
 }
 
-async function closeGithubIssue(issueNumber, status) {
+async function closeGithubIssue(issueNumber, status, typeLabels) {
   const url = `https://api.github.com/repos/${repoFull}/issues/${issueNumber}`;
 
-  const { labels } = mapNotionStatusToGithubMeta(status);
+  const { statusLabel } = mapNotionStatusToGithubMeta(status);
+  const labels = [statusLabel, ...typeLabels];
 
   const payload = {
     state: "closed",
@@ -201,7 +251,7 @@ async function updateNotionTask(pageId, issueNumber, issueUrl) {
         number: Number(issueNumber),
       },
       "GitHub URL": {
-        url: issueUrl,
+        url: issueUrl || null,
       },
       Source: {
         select: { name: "GitHub" },
@@ -231,14 +281,21 @@ async function updateNotionTask(pageId, issueNumber, issueUrl) {
     for (const page of tasks) {
       const title = getTitleFromPage(page);
       const status = getStatusFromPage(page);
+      const types = getTypesFromPage(page);
       const notionUrl = page.url;
 
-      const { state, labels } = mapNotionStatusToGithubMeta(status);
+      const { state, statusLabel } = mapNotionStatusToGithubMeta(status);
+      const typeLabels = mapTypesToGithubLabels(types);
+      const labels = [statusLabel, ...typeLabels];
 
-      const body = `Synced from Notion Dev Tasks.\n\nNotion task: ${notionUrl}\nStatus: ${status}`;
+      const body = `Synced from Notion Dev Tasks.\n\nNotion task: ${notionUrl}\nStatus: ${status}\nType(s): ${types.join(
+        ", "
+      )}`;
 
       console.log(
-        `Creating GitHub issue for Notion page ${page.id} with title "${title}" and status "${status}"`
+        `Creating GitHub issue for Notion page ${page.id} with title "${title}", status "${status}", types [${types.join(
+          ", "
+        )}]`
       );
       const { number, html_url } = await createGithubIssue(
         title,
@@ -267,12 +324,18 @@ async function updateNotionTask(pageId, issueNumber, issueUrl) {
 
       const issueNumber = issueIdProp.number;
       const status = getStatusFromPage(page);
+      const types = getTypesFromPage(page);
+      const currentUrl = props["GitHub URL"]?.url || null;
+
+      const typeLabels = mapTypesToGithubLabels(types);
 
       console.log(
-        `Closing GitHub issue #${issueNumber} because Notion status is "${status}".`
+        `Closing GitHub issue #${issueNumber} because Notion status is "${status}" (types: [${types.join(
+          ", "
+        )}]).`
       );
-      await closeGithubIssue(issueNumber, status);
-      await updateNotionTask(page.id, issueNumber, props["GitHub URL"]?.url);
+      await closeGithubIssue(issueNumber, status, typeLabels);
+      await updateNotionTask(page.id, issueNumber, currentUrl);
     }
 
     console.log("Notion → GitHub sync complete.");
