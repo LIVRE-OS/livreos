@@ -1,23 +1,24 @@
 // scripts/github-to-notion.js
-// Sync GitHub Issues -> Notion "Dev Tasks" database using the Notion API.
+// Sync a single GitHub issue to the Notion "Dev Tasks" database.
 
-const [, , issueNumber, issueTitle, issueUrl, action] = process.argv;
+const fs = require("fs");
 
-if (!issueNumber || !issueTitle || !issueUrl || !action) {
-  console.error("Missing arguments. Usage: node github-to-notion.js <number> <title> <url> <action>");
-  process.exit(1);
-}
-
+// ENV
 const notionToken = process.env.NOTION_TOKEN;
 const databaseId = process.env.NOTION_DEV_TASKS_DB_ID;
+const githubEventPath = process.env.GITHUB_EVENT_PATH;
 
-if (!notionToken || !databaseId) {
-  console.error("Missing NOTION_TOKEN or NOTION_DEV_TASKS_DB_ID env vars");
+if (!notionToken || !databaseId || !githubEventPath) {
+  console.error(
+    "Missing NOTION_TOKEN, NOTION_DEV_TASKS_DB_ID, or GITHUB_EVENT_PATH env vars"
+  );
   process.exit(1);
 }
 
 const NOTION_API = "https://api.notion.com/v1";
 const NOTION_VERSION = "2022-06-28";
+
+// ---------- Notion helpers ----------
 
 async function notionFetch(path, options = {}) {
   const res = await fetch(`${NOTION_API}${path}`, {
@@ -33,18 +34,59 @@ async function notionFetch(path, options = {}) {
   if (!res.ok) {
     const text = await res.text();
     console.error("Notion API error:", text);
-    throw new Error(`Request failed: ${res.status}`);
+    throw new Error(`Notion request failed: ${res.status}`);
   }
 
   return res.json();
 }
 
-async function findExistingTask(issueNum) {
+function getTitleFromIssue(issue) {
+  return issue.title || "Untitled issue";
+}
+
+// Map GitHub Issue → Notion Status
+function mapGithubToNotionStatus(issue) {
+  const state = issue.state; // "open" or "closed"
+  const labels = issue.labels || [];
+
+  // Find first "status/..." label, if any
+  let statusLabel = null;
+  for (const label of labels) {
+    if (label.name && label.name.startsWith("status/")) {
+      statusLabel = label.name.slice("status/".length); // e.g. "in-progress"
+      break;
+    }
+  }
+
+  // If issue is closed → Done or Archived
+  if (state === "closed") {
+    if (statusLabel === "archived") return "Archived";
+    return "Done";
+  }
+
+  // Issue is open → map by status label
+  switch (statusLabel) {
+    case "ready":
+      return "Ready";
+    case "in-progress":
+      return "In Progress";
+    case "blocked":
+      return "Blocked";
+    case "review":
+      return "Review";
+    case "backlog":
+    default:
+      return "Backlog";
+  }
+}
+
+async function findTaskByIssueNumber(issueNumber) {
   const body = {
     filter: {
       property: "GitHub Issue ID",
-      number: { equals: Number(issueNum) },
+      number: { equals: issueNumber },
     },
+    page_size: 1,
   };
 
   const data = await notionFetch(`/databases/${databaseId}/query`, {
@@ -52,31 +94,27 @@ async function findExistingTask(issueNum) {
     body: JSON.stringify(body),
   });
 
-  return data.results?.[0] || null;
+  return (data.results && data.results[0]) || null;
 }
 
-function getStatusFromAction(action) {
-  if (action === "closed") return "Done";
-  return "Backlog"; // opened / edited
-}
-
-async function createTask(issueNum, title, url, action) {
-  const status = getStatusFromAction(action);
+async function createTaskFromIssue(issue) {
+  const title = getTitleFromIssue(issue);
+  const status = mapGithubToNotionStatus(issue);
 
   const body = {
     parent: { database_id: databaseId },
     properties: {
       Name: {
-        title: [{ text: { content: title } }],
+        title: [{ type: "text", text: { content: title } }],
       },
       Status: {
         select: { name: status },
       },
       "GitHub Issue ID": {
-        number: Number(issueNum),
+        number: issue.number,
       },
       "GitHub URL": {
-        url,
+        url: issue.html_url,
       },
       Source: {
         select: { name: "GitHub" },
@@ -87,27 +125,29 @@ async function createTask(issueNum, title, url, action) {
     },
   };
 
-  await notionFetch("/pages", {
+  await notionFetch(`/pages`, {
     method: "POST",
     body: JSON.stringify(body),
   });
-
-  console.log("Created Notion task for issue", issueNum);
 }
 
-async function updateTask(pageId, issueNum, title, url, action) {
-  const status = getStatusFromAction(action);
+async function updateTaskFromIssue(pageId, issue) {
+  const title = getTitleFromIssue(issue);
+  const status = mapGithubToNotionStatus(issue);
 
   const body = {
     properties: {
       Name: {
-        title: [{ text: { content: title } }],
+        title: [{ type: "text", text: { content: title } }],
       },
       Status: {
         select: { name: status },
       },
       "GitHub URL": {
-        url,
+        url: issue.html_url,
+      },
+      Source: {
+        select: { name: "GitHub" },
       },
       "Last Synced": {
         date: { start: new Date().toISOString() },
@@ -119,21 +159,34 @@ async function updateTask(pageId, issueNum, title, url, action) {
     method: "PATCH",
     body: JSON.stringify(body),
   });
-
-  console.log("Updated Notion task for issue", issueNum);
 }
+
+// ---------- Main ----------
 
 (async () => {
   try {
-    const existing = await findExistingTask(issueNumber);
+    const raw = fs.readFileSync(githubEventPath, "utf8");
+    const event = JSON.parse(raw);
 
-    if (!existing && action !== "deleted") {
-      await createTask(issueNumber, issueTitle, issueUrl, action);
-    } else if (existing) {
-      await updateTask(existing.id, issueNumber, issueTitle, issueUrl, action);
-    } else {
-      console.log("Issue deleted and no existing task; nothing to do.");
+    const issue = event.issue;
+    if (!issue) {
+      console.log("No issue in event payload. Nothing to sync.");
+      return;
     }
+
+    console.log(`Syncing GitHub issue #${issue.number} → Notion...`);
+
+    const existing = await findTaskByIssueNumber(issue.number);
+
+    if (existing) {
+      console.log("Existing Notion task found. Updating...");
+      await updateTaskFromIssue(existing.id, issue);
+    } else {
+      console.log("No Notion task found. Creating...");
+      await createTaskFromIssue(issue);
+    }
+
+    console.log("GitHub → Notion sync complete.");
   } catch (err) {
     console.error("Sync error:", err);
     process.exit(1);
