@@ -40,3 +40,54 @@ You can deploy it anywhere:
 
 ## 📁 Project Structure
 
+---
+
+## 📚 LIVRE OS Specs & Documentation
+
+Full technical documentation is hosted separately in Notion:
+
+- **Solivre Kernel**
+- **LivreID Namespace**
+- **Proof Engine (GC/MPC)**
+- **LivreVault Storage**
+- **Key Management**
+- **Nodes & Compute**
+- **Legal & Compliance**
+- **Roadmap & Milestones**
+
+> The website links will be updated to point to the live docs once the public portal is ready.
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome.
+
+You may propose:
+
+- UI/UX improvements  
+- Accessibility enhancements  
+- Animations or visual upgrades  
+- Typography, color palette, or branding refinements  
+- Additional pages (Docs, Developers, Architecture, etc.)  
+
+Open a pull request or start a discussion.
+
+---
+
+## 🛡 License
+
+This website template is provided under the **MIT License** — free to use, modify, copy, and distribute.
+
+The **LIVRE OS brand and identity** remain under their respective copyright protections.
+
+---
+
+## 🌞 Vision
+
+**A world where trust does not require exposure.  
+A world where identity is sovereign.  
+A world where privacy is the default, not the exception.**
+
+Welcome to LIVRE OS.
+
