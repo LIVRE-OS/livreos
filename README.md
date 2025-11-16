@@ -2,7 +2,7 @@
 Sovereign Identity Operating System  
 **Verify anything. Reveal nothing. Own everything.**
 
-LIVRE OS is the world’s first **identity-native operating system** — a modular, privacy-preserving foundation for digital identity, verification, and self-sovereign data control.
+LIVRE OS is the world’s first **identity-native operating system**, a modular, privacy-preserving foundation for digital identity, verification, and self-sovereign data control.
 
 This repository contains the **public website** for the LIVRE OS project.
 
@@ -18,7 +18,7 @@ LIVRE OS replaces document-sharing and personal-data exposure with **cryptograph
 - No sensitive data retention.  
 - No centralized identity database.  
 
-Users keep everything inside **Solivre** — the sovereign identity kernel — and apps receive only verifiable **yes/no answers** using MPC / Garbled Circuits on **COTI gcEVM**.
+Users keep everything inside **Solivre**, the sovereign identity kernel, and apps receive only verifiable **yes/no answers** using MPC / Garbled Circuits on **COTI gcEVM**.
 
 This repo showcases the concept and links to the broader OS architecture and specifications.
 
