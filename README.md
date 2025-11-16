@@ -5,6 +5,7 @@ LIVRE OS is the world’s first **identity-native operating system**, a modular,
 
 This repository contains the **public landing page** for the LIVRE OS project.
 
+Live site: https://livre-os.github.io/website/
 ---
 
 ## 🚀 Overview
