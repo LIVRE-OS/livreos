@@ -1,11 +1,12 @@
-# 🌐 LIVRE OS - Sovereign Identity Operating System  
+# 🌐 LIVRE OS — Sovereign Identity Operating System  
 **Verify anything. Reveal nothing. Own everything.**
 
-LIVRE OS is the world’s first **identity-native operating system**, a modular, privacy-preserving foundation for digital identity, verification, and self-sovereign data control.
+LIVRE OS is the world’s first **identity-native operating system** — a modular, privacy-preserving foundation for digital identity, verification, and self-sovereign data control.
 
-This repository contains the **public landing page** for the LIVRE OS project.
+This repository contains the **public website** for the LIVRE OS project.
 
-Live site: https://livre-os.github.io/website/
+👉 **Live site:** https://livre-os.github.io/website/
+
 ---
 
 ## 🚀 Overview
@@ -14,81 +15,44 @@ LIVRE OS replaces document-sharing and personal-data exposure with **cryptograph
 
 - No surveillance.  
 - No sensitive data retention.  
-- No centralized databases.  
+- No centralized identity database.  
 
-Users keep everything inside **Solivre** — the sovereign identity kernel — and apps receive only verifiable **yes/no answers** using MPC/Garbled Circuits on the **COTI gcEVM**.
+Users keep everything inside **Solivre** — the sovereign identity kernel — and apps receive only verifiable **yes/no answers** using MPC / Garbled Circuits on **COTI gcEVM**.
 
-This repo showcases the concept and directs builders, auditors, and contributors to the project specifications.
+This repo showcases the concept and links to the broader OS architecture and specifications.
 
 ---
 
-## 🏗 Tech Used
+## 🏗 Tech Stack
 
-This site is intentionally minimal and portable:
+The site is intentionally lightweight and portable:
 
 - **HTML5**
 - **CSS3** (custom theme)
 - **Vanilla JavaScript**
-- Fully static (no build tools required)
-
-You can deploy it anywhere:
-- GitHub Pages  
-- Vercel  
-- Netlify  
-- Cloudflare Pages  
+- Fully static (no build process required)
 
 ---
 
-## 📁 Project Structure
+## 📁 Structure
 
----
+```text
+website/
+│
+├── index.html          # Landing page
+├── architecture.html   # High-level OS architecture
+├── solivre.html        # Solivre identity kernel overview
+├── livreid.html        # LivreID naming layer
+├── vault.html          # LivreVault sovereign storage
+├── developers.html     # Developer-facing overview (LivreKit)
+├── roadmap.html        # Roadmap phases
+├── contact.html        # Contact & links
+│
+├── solivre-wallet.html # (Optional) Wallet UI mock/demo screen
+│
+├── styles.css          # Shared design system
+└── script.js           # Small nav/highlight script
 
-## 📚 LIVRE OS Specs & Documentation
-
-Full technical documentation is hosted separately in Notion:
-
-- **Solivre Kernel**
-- **LivreID Namespace**
-- **Proof Engine (GC/MPC)**
-- **LivreVault Storage**
-- **Key Management**
-- **Nodes & Compute**
-- **Legal & Compliance**
-- **Roadmap & Milestones**
-
-> The website links will be updated to point to the live docs once the public portal is ready.
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome.
-
-You may propose:
-
-- UI/UX improvements  
-- Accessibility enhancements  
-- Animations or visual upgrades  
-- Typography, color palette, or branding refinements  
-- Additional pages (Docs, Developers, Architecture, etc.)  
-
-Open a pull request or start a discussion.
-
----
-
-## 🛡 License
-
-This website template is provided under the **MIT License** — free to use, modify, copy, and distribute.
-
-The **LIVRE OS brand and identity** remain under their respective copyright protections.
-
----
-
-## 🌞 Vision
-
-**A world where trust does not require exposure.  
-A world where identity is sovereign.  
 A world where privacy is the default, not the exception.**
 
 Welcome to LIVRE OS.
-
