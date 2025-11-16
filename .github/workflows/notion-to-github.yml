@@ -5,6 +5,10 @@ on:
     - cron: "*/15 * * * *"  # Every 15 minutes
   workflow_dispatch:
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   notion-to-github:
     runs-on: ubuntu-latest
